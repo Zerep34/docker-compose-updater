@@ -69,12 +69,18 @@ def update_image_version(service_name, new_image, new_version, docker_compose_fi
 
 def run_docker_compose(currentDirectory):
     try:
+        log_path_out = os.path.join(currentDirectory, "docker_compose.log")
+        log_file_out = open(log_path_out, "w")  # ⚠️ Don't forget to close this later if needed
+
+        log_path_error = os.path.join(currentDirectory, "docker_compose.log")
+        log_file_error = open(log_path_error, "w")  # ⚠️ Don't forget to close this later if needed
+
         # Start the process without waiting for it to finish
         process = subprocess.Popen(
             ["docker", "compose", "up", "-d"],
             cwd=currentDirectory,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=log_file_out,
+            stderr=log_file_error,
             text=True,
             shell=False
         )
