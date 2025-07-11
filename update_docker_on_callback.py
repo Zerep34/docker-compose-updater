@@ -62,7 +62,7 @@ def update_image_version(service_name, new_image, new_version, docker_compose_fi
 
     # Écrit le fichier modifié
     with open(docker_compose_filepath, 'w') as f:
-        yaml.dump(data, f, sort_keys=False)
+        yaml.safe_dump(data, f, sort_keys=False)
 
     print(f"✅ Service '{service_name}' mis à jour avec l'image {full_image}")
 
