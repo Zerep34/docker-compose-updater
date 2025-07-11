@@ -44,7 +44,6 @@ Look for `"chat": { "id": ... }` in the JSON. That’s your `CHAT_ID`.
 
 ```bash
 # Run every day at 14:00
-0 14 * * * /usr/bin/python3 ~/dev/docker-compose-updater/check_image_updates.py >> /path/to/logfile.log 2>&1
+30 9-20 * * * cd /home/zerep/dev && /usr/bin/python3 docker-compose-updater/check_image_updates.py <param1> <param2> <param3> >> check_updates.log 2>&1
 # Run every day at 14:30
-30 14 * * * /usr/bin/python3 ~/dev/docker-compose-updater/check_image_updates.py >> /path/to/second.log 2>&1`
-```
+* 9-20 * * * cd /home/zerep/dev && /usr/bin/python3 docker-compose-updater/update_docker_on_callback.py <param1> <param2> <param3> >> update_callback.log 2>&1```

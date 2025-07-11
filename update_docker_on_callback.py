@@ -1,34 +1,23 @@
 import json
+import sys
 
 import requests
 import yaml
 import os
 import subprocess
 
-from dotenv import load_dotenv
-
-load_dotenv()  # take environment variables from .env
-
-bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
-bot_chat_id = os.getenv("TELEGRAM_BOT_CHAT_ID")
-docker_compose_filepath = os.getenv("DOCKER_COMPOSE_FILEPATH")
-
-OFFSET_FILE = "telegram_offset.txt"
-
-API_URL = f"https://api.telegram.org/bot{bot_token}"
-
-def read_offset():
-    if os.path.exists(OFFSET_FILE):
-        with open(OFFSET_FILE, "r") as f:
+def read_offset(offset_filepath):
+    if os.path.exists(offset_filepath):
+        with open(offset_filepath, "r") as f:
             return int(f.read().strip())
     return None
 
-def save_offset(offset):
-    with open(OFFSET_FILE, "w") as f:
+def save_offset(offset_filepath, offset):
+    with open(offset_filepath, "w") as f:
         f.write(str(offset))
 
-def get_updates(offset=None):
-    url = f"{API_URL}/getUpdates"
+def get_updates(offset, api_url):
+    url = f"{api_url}/getUpdates"
     params = {
         "timeout": 30,
         "offset": offset
@@ -36,7 +25,7 @@ def get_updates(offset=None):
     res = requests.get(url, params=params)
     return res.json()
 
-def handle_callback(callback):
+def handle_callback(callback, api_url):
     query_id = callback["id"]
     user = callback["from"]["username"]
     data = json.loads(callback["data"])
@@ -44,7 +33,7 @@ def handle_callback(callback):
     print(f"📥 Button pressed by @{user}: {data}")
 
     # Respond to Telegram to remove spinner
-    requests.post(f"{API_URL}/answerCallbackQuery", data={
+    requests.post(f"{api_url}/answerCallbackQuery", data={
         "callback_query_id": query_id,
         "text": f"✅ You clicked: {data}",
         "show_alert": False
@@ -58,7 +47,7 @@ def handle_callback(callback):
         print("❌ Rejection action triggered.")
         return None, None
 
-def update_image_version(service_name, new_image, new_version):
+def update_image_version(service_name, new_image, new_version, docker_compose_filepath):
     with open(docker_compose_filepath, 'r') as f:
         data = yaml.safe_load(f)
 
@@ -77,36 +66,41 @@ def update_image_version(service_name, new_image, new_version):
 
     print(f"✅ Service '{service_name}' mis à jour avec l'image {full_image}")
 
-def run_docker_compose():
+def run_docker_compose(docker_compose_filepath):
     try:
-        # Run the command
-        result = subprocess.run(
+        # Start the process without waiting for it to finish
+        process = subprocess.Popen(
             ["docker", "compose", "up", "-d"],
-            capture_output=True,
+            cwd=docker_compose_filepath,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            check=True  # Raises CalledProcessError on failure
+            shell=False
         )
-        print("✅ Docker Compose started successfully:")
-        print(result.stdout)
-    except subprocess.CalledProcessError as e:
-        print("❌ Error running docker-compose:")
-        print(e.stderr)
+        print("▶️ Docker Compose command started asynchronously.")
+    except Exception as e:
+        print(f"❌ Failed to start docker-compose: {e}")
 
-def main():
+def update_docker(offsetFilepath, dockerComposeFilepath, apiUrl):
     print("🤖 Listening for button clicks...")
-    offset = read_offset()
+    offset = read_offset(offsetFilepath)
 
-    updates = get_updates(offset)
+    updates = get_updates(offset, apiUrl)
     for update in updates.get("result", []):
         offset = update["update_id"] + 1
-        save_offset(offset)  # Save offset immediately after processing each update
+        save_offset(offsetFilepath, offset)  # Save offset immediately after processing each update
 
         if "callback_query" in update:
-            image, version = handle_callback(update["callback_query"])
+            image, version = handle_callback(update["callback_query"], apiUrl)
 
-            update_image_version(image , image, version)
+            update_image_version(image , image, version, dockerComposeFilepath)
 
-            run_docker_compose()
+            run_docker_compose(dockerComposeFilepath)
 
 if __name__ == "__main__":
-    main()
+    offset_filepath = sys.argv[1]
+    bot_token = sys.argv[2]
+    docker_compose_filepath = sys.argv[3]
+    api_url = f"https://api.telegram.org/bot{bot_token}"
+
+    update_docker(offset_filepath, docker_compose_filepath, api_url)

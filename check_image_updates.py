@@ -1,15 +1,7 @@
 import yaml
 import requests
 import json
-import os
-
-from dotenv import load_dotenv
-
-load_dotenv()  # take environment variables from .env
-
-bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
-bot_chat_id = os.getenv("TELEGRAM_BOT_CHAT_ID")
-docker_compose_filepath = os.getenv("DOCKER_COMPOSE_FILEPATH")
+import sys
 
 def get_latest_tag(image, arch):
     if "/" not in image:
@@ -30,7 +22,7 @@ def get_latest_tag(image, arch):
     except Exception as e:
         return []
 
-def main():
+def main(docker_compose_filepath, bot_token, bot_chat_id):
     global arch
     with open(docker_compose_filepath) as f:
         compose = yaml.safe_load(f)
@@ -62,7 +54,8 @@ def main():
             result = ""
             result += (f"🔹 {svc}: {image_full}\n")
             result += (f"  ⚠️  Update available: {current_tag} → {latest}\n")
-            send_telegram_message(bot_token,  result, image, latest)
+            send_telegram_message(bot_token, bot_chat_id, result, image, latest)
+            break
         #else:
             #print(f"  ✅ Up-to-date")
 
@@ -81,7 +74,7 @@ def normalize_format(s):
 def same_format(s1, s2):
     return normalize_format(s1) == normalize_format(s2)
 
-def send_telegram_message(bot_token, message, image, version):
+def send_telegram_message(bot_token, bot_chat_id, message, image, version):
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
 
     callback_data = '{"a":"approve", "i":"' + image + '","v":"' + version + '"}'
@@ -106,4 +99,8 @@ def send_telegram_message(bot_token, message, image, version):
     else:
         print("✅ Message sent successfully.")
 if __name__ == "__main__":
-    main()
+    docker_compose_filepath = sys.argv[1]
+    bot_token = sys.argv[2]
+    bot_chat_id = sys.argv[3]
+
+    main(docker_compose_filepath, bot_token, bot_chat_id)
