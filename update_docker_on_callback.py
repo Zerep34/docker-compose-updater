@@ -48,6 +48,7 @@ def handle_callback(callback, api_url):
         return None, None
 
 def update_image_version(service_name, new_image, new_version, docker_compose_filepath):
+    print(docker_compose_filepath)
     with open(docker_compose_filepath, 'r') as f:
         data = yaml.safe_load(f)
 
