@@ -66,12 +66,12 @@ def update_image_version(service_name, new_image, new_version, docker_compose_fi
 
     print(f"✅ Service '{service_name}' mis à jour avec l'image {full_image}")
 
-def run_docker_compose(docker_compose_filepath):
+def run_docker_compose(currentDirectory):
     try:
         # Start the process without waiting for it to finish
         process = subprocess.Popen(
             ["docker", "compose", "up", "-d"],
-            cwd=docker_compose_filepath,
+            cwd=currentDirectory,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -81,7 +81,7 @@ def run_docker_compose(docker_compose_filepath):
     except Exception as e:
         print(f"❌ Failed to start docker-compose: {e}")
 
-def update_docker(offsetFilepath, dockerComposeFilepath, apiUrl):
+def update_docker(currentDirectory, offsetFilepath, dockerComposeFilepath, apiUrl):
     print("🤖 Listening for button clicks...")
     offset = read_offset(offsetFilepath)
 
@@ -95,12 +95,13 @@ def update_docker(offsetFilepath, dockerComposeFilepath, apiUrl):
 
             update_image_version(image , image, version, dockerComposeFilepath)
 
-            run_docker_compose(dockerComposeFilepath)
+            run_docker_compose(currentDirectory)
 
 if __name__ == "__main__":
-    offset_filepath = sys.argv[1]
+    current_directory = sys.argv[1]
+    offset_filepath = f"{sys.argv[1]}/{sys.argv[2]}"
+    docker_compose_filepath = f"{sys.argv[1]}/docker.compose.yml"
     bot_token = sys.argv[2]
-    docker_compose_filepath = sys.argv[3]
     api_url = f"https://api.telegram.org/bot{bot_token}"
 
-    update_docker(offset_filepath, docker_compose_filepath, api_url)
+    update_docker(current_directory, offset_filepath, docker_compose_filepath, api_url)
