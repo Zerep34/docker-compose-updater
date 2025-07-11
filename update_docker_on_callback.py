@@ -47,32 +47,44 @@ def handle_callback(callback, api_url):
         print("❌ Rejection action triggered.")
         return None, None
 
-def update_image_version(service_name, new_image, new_version, docker_compose_filepath):
-    print(docker_compose_filepath)
+def update_image_version(new_image, new_version, docker_compose_filepath):
+    # Map image name to service name (remove slashes, if needed)
+    image_to_service = {
+        "linuxserver/plex": "plex",
+        "linuxserver/deluge": "deluge",
+        "linuxserver/sonarr": "sonarr",
+        "linuxserver/radarr": "radarr",
+        "linuxserver/prowlarr": "prowlarr",
+        "linuxserver/wireguard": "wireguard",
+    }
+
+    service_name = image_to_service.get(new_image)
+    if not service_name:
+        print(f"❌ Unknown image name: {new_image}")
+        return
+
     with open(docker_compose_filepath, 'r') as f:
         data = yaml.safe_load(f)
 
-    # Compose l'image complète
     full_image = f"{new_image}:{new_version}"
 
-    # Vérifie que le service existe
     if service_name in data.get('services', {}):
         data['services'][service_name]['image'] = full_image
     else:
-        print(f"⚠️ Service '{service_name}' non trouvé dans le fichier.")
+        print(f"⚠️ Service '{service_name}' not found in the file.")
+        return
 
-    # Écrit le fichier modifié
     with open(docker_compose_filepath, 'w') as f:
         yaml.safe_dump(data, f, sort_keys=False)
 
-    print(f"✅ Service '{service_name}' mis à jour avec l'image {full_image}")
+    print(f"✅ Service '{service_name}' updated to image {full_image}")
 
 def run_docker_compose(currentDirectory):
     try:
-        log_path_out = os.path.join(currentDirectory, "docker_compose.log")
+        log_path_out = os.path.join(currentDirectory, "docker_compose_out.log")
         log_file_out = open(log_path_out, "w")  # ⚠️ Don't forget to close this later if needed
 
-        log_path_error = os.path.join(currentDirectory, "docker_compose.log")
+        log_path_error = os.path.join(currentDirectory, "docker_compose_error.log")
         log_file_error = open(log_path_error, "w")  # ⚠️ Don't forget to close this later if needed
 
         # Start the process without waiting for it to finish
@@ -102,7 +114,7 @@ def update_docker(currentDirectory, offsetFilepath, dockerComposeFilepath, apiUr
         if "callback_query" in update:
             image, version = handle_callback(update["callback_query"], apiUrl)
 
-            update_image_version(image , image, version, dockerComposeFilepath)
+            update_image_version(image, version, dockerComposeFilepath)
 
             run_docker_compose(currentDirectory)
 
