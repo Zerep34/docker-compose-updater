@@ -78,6 +78,7 @@ def run_docker_compose(currentDirectory):
             text=True,
             shell=False
         )
+        print(process.pid)
         print("▶️ Docker Compose command started asynchronously.")
     except Exception as e:
         print(f"❌ Failed to start docker-compose: {e}")
@@ -86,11 +87,8 @@ def update_docker(currentDirectory, offsetFilepath, dockerComposeFilepath, apiUr
     print("🤖 Listening for button clicks...")
     offset = read_offset(offsetFilepath)
 
-    print(offset)
-
     updates = get_updates(offset, apiUrl)
 
-    print(updates)
     for update in updates.get("result", []):
         offset = update["update_id"] + 1
         save_offset(offsetFilepath, offset)  # Save offset immediately after processing each update
