@@ -105,7 +105,7 @@ def update_docker(currentDirectory, offsetFilepath, dockerComposeFilepath, apiUr
 if __name__ == "__main__":
     current_directory = sys.argv[1]
     offset_filepath = f"{sys.argv[1]}/{sys.argv[2]}"
-    docker_compose_filepath = f"{sys.argv[1]}/docker.compose.yml"
+    docker_compose_filepath = f"{sys.argv[1]}/docker-compose.yml"
     bot_token = sys.argv[3]
     api_url = f"https://api.telegram.org/bot{bot_token}"
 
