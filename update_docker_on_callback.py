@@ -47,7 +47,7 @@ def handle_callback(callback, api_url):
         print("❌ Rejection action triggered.")
         return None, None
 
-def update_image_version(new_image, new_version, docker_compose_filepath):
+def update_image_version(service_name, new_image, new_version, docker_compose_filepath):
     # Map image name to service name (remove slashes, if needed)
     image_to_service = {
         "linuxserver/plex": "plex",
@@ -68,8 +68,12 @@ def update_image_version(new_image, new_version, docker_compose_filepath):
 
     full_image = f"{new_image}:{new_version}"
 
+    print(service_name, print())
+
     if service_name in data.get('services', {}):
         data['services'][service_name]['image'] = full_image
+
+
     else:
         print(f"⚠️ Service '{service_name}' not found in the file.")
         return
@@ -114,7 +118,7 @@ def update_docker(currentDirectory, offsetFilepath, dockerComposeFilepath, apiUr
         if "callback_query" in update:
             image, version = handle_callback(update["callback_query"], apiUrl)
 
-            update_image_version(image, version, dockerComposeFilepath)
+            update_image_version(image , image, version, dockerComposeFilepath)
 
             run_docker_compose(currentDirectory)
 
